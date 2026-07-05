@@ -2,22 +2,42 @@
 <html>
 <head>
   <meta charset="utf-8">
+  <title>DoveRunner DRM Player</title>
+
   <script src="https://cdn.jsdelivr.net/npm/shaka-player/dist/shaka-player.compiled.js"></script>
 </head>
+
 <body>
 
-<video id="video" controls width="800"></video>
+<video id="video" width="800" controls autoplay></video>
 
 <script>
 async function init() {
+
   const video = document.getElementById('video');
   const player = new shaka.Player(video);
 
+  // 에러 로그 확인
+  player.addEventListener('error', (e) => {
+    console.error('Shaka Error:', e);
+  });
+
+  // DRM 설정 (DoveRunner + Widevine 기본 구조)
+  player.configure({
+    drm: {
+      servers: {
+        // DoveRunner가 관리하는 license endpoint 구조
+        'com.widevine.alpha': 'https://license.doverunner.com'
+      }
+    }
+  });
+
   try {
+    // MPD 로드
     await player.load('stream.mpd');
-    console.log('loaded');
+    console.log('MPD loaded successfully');
   } catch (e) {
-    console.error(e);
+    console.error('Load failed:', e);
   }
 }
 
