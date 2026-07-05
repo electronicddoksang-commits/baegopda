@@ -17,27 +17,43 @@ async function init() {
   const video = document.getElementById('video');
   const player = new shaka.Player(video);
 
-  // 에러 로그 확인
   player.addEventListener('error', (e) => {
     console.error('Shaka Error:', e);
   });
 
-  // DRM 설정 (DoveRunner + Widevine 기본 구조)
+  // 🔐 핵심 DRM 설정
   player.configure({
     drm: {
       servers: {
-        // DoveRunner가 관리하는 license endpoint 구조
-        'com.widevine.alpha': 'https://license.doverunner.com'
+        'com.widevine.alpha': 'https://license.doverunner.com/ri/licenseManager.do'
+      },
+
+      // ⭐ 여기 핵심 (토큰 들어가는 자리)
+      advanced: {
+        'com.widevine.alpha': {
+          videoRobustness: 'SW_SECURE_CRYPTO',
+          audioRobustness: 'SW_SECURE_CRYPTO'
+        }
       }
     }
   });
 
+  // 👉 토큰 (너가 받은 값 넣는 자리)
+  const token = "eyJrZXlfcm90YXRpb24iOmZhbHNlLCJyZXNwb25zZV9mb3JtYXQiOiJqc29uIiwidXNlcl9pZCI6Im5pY2V0ZXN0IiwiZHJtX3R5cGUiOiJXaWRldmluZSIsInNpdGVfaWQiOiJQTVdQIiwiaGFzaCI6IlJGWU50K2R2aVpHRURvTlNVQUo1QVY3TTZ2VUpFblhMZFBIRXVxSEFybnc9IiwiY2lkIjoiaGFoYXRlc3QiLCJwb2xpY3kiOiI1WTVOd2RpQStuU0ZINGhYODc3K0NqWWFrME82dXN5VlUyc0k5UFpjNkR3PSIsInRpbWVzdGFtcCI6IjIwMjYtMDctMDVUMDM6NTg6MThaIn0=";
+
+  // 🔥 license request header에 붙이기
+  player.getNetworkingEngine().registerRequestFilter(function(type, request) {
+
+    if (type === shaka.net.NetworkingEngine.RequestType.LICENSE) {
+      request.headers['pallycon-customdata-v2'] = token;
+    }
+  });
+
   try {
-    // MPD 로드
     await player.load('stream.mpd');
-    console.log('MPD loaded successfully');
+    console.log("Playback started");
   } catch (e) {
-    console.error('Load failed:', e);
+    console.error("Load failed", e);
   }
 }
 
