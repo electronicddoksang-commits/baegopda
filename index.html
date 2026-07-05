@@ -1,40 +1,63 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="utf-8">
-  <title>DRM Player</title>
-  <script src="https://cdn.jsdelivr.net/npm/shaka-player/dist/shaka-player.compiled.js"></script>
-</head>
+    <meta charset="utf-8">
+    <title>DoveRunner DRM Test</title>
 
+    <script src="https://cdn.jsdelivr.net/npm/shaka-player/dist/shaka-player.compiled.js"></script>
+</head>
 <body>
 
-<video id="video" width="800" controls autoplay></video>
+<video id="video"
+       width="900"
+       controls
+       autoplay></video>
 
 <script>
 async function init() {
 
-  const video = document.getElementById('video');
-  const player = new shaka.Player(video);
+    shaka.polyfill.installAll();
 
-  // 에러 로그
-  player.addEventListener('error', console.error);
+    const video = document.getElementById("video");
+    const player = new shaka.Player(video);
 
-  // DRM (일단 유지)
-  player.configure({
-    drm: {
-      servers: {
-        'com.widevine.alpha': 'https://license.doverunner.com/ri/licenseManager.do'
-      }
+    player.addEventListener("error", e => {
+        console.error("Shaka Error:", e);
+    });
+
+    player.configure({
+        drm: {
+            servers: {
+                "com.widevine.alpha":
+                    "https://license.doverunner.com/ri/licenseManager.do"
+            }
+        }
+    });
+
+    // ★ DoveRunner Token 추가
+    const token = "eyJrZXlfcm90YXRpb24iOmZhbHNlLCJyZXNwb25zZV9mb3JtYXQiOiJqc29uIiwidXNlcl9pZCI6Im5pY2V0ZXN0IiwiZHJtX3R5cGUiOiJXaWRldmluZSIsInNpdGVfaWQiOiJQTVdQIiwiaGFzaCI6IlJGWU50K2R2aVpHRURvTlNVQUo1QVY3TTZ2VUpFblhMZFBIRXVxSEFybnc9IiwiY2lkIjoiaGFoYXRlc3QiLCJwb2xpY3kiOiI1WTVOd2RpQStuU0ZINGhYODc3K0NqWWFrME82dXN5VlUyc0k5UFpjNkR3PSIsInRpbWVzdGFtcCI6IjIwMjYtMDctMDVUMDM6NTg6MThaIn0=";
+
+    player.getNetworkingEngine().registerRequestFilter((type, request) => {
+
+        if (type === shaka.net.NetworkingEngine.RequestType.LICENSE) {
+
+            request.headers["pallycon-customdata-v2"] = token;
+
+        }
+
+    });
+
+    try {
+
+        await player.load("./stream.mpd");
+
+        console.log("Loaded");
+
+    } catch (e) {
+
+        console.error(e);
+
     }
-  });
-
-  try {
-    // 🚨 핵심: 이제 절대 baegopda 붙이면 안됨
-    await player.load('./stream.mpd');
-    console.log("loaded");
-  } catch (e) {
-    console.error(e);
-  }
 }
 
 init();
