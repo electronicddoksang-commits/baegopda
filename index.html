@@ -1,30 +1,9 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <title>DoveRunner DRM Player</title>
-
-  <script src="https://cdn.jsdelivr.net/npm/shaka-player/dist/shaka-player.compiled.js"></script>
-</head>
-
-<body>
-
-<video id="video" width="800" controls autoplay></video>
-
 <script>
 async function init() {
 
   const video = document.getElementById('video');
   const player = new shaka.Player(video);
 
-  // 에러 로그
-  player.addEventListener('error', (e) => {
-    console.error('Shaka Error:', e);
-  });
-
-  // -----------------------------
-  // DRM 서버 설정 (Widevine)
-  // -----------------------------
   player.configure({
     drm: {
       servers: {
@@ -33,29 +12,25 @@ async function init() {
     }
   });
 
-  // -----------------------------
-  // 🔐 핵심: DoveRunner 토큰 삽입
-  // -----------------------------
-  const token = "eyJrZXlfcm90YXRpb24iOmZhbHNlLCJyZXNwb25zZV9mb3JtYXQiOiJqc29uIiwidXNlcl9pZCI6Im5pY2V0ZXN0IiwiZHJtX3R5cGUiOiJXaWRldmluZSIsInNpdGVfaWQiOiJQTVdQIiwiaGFzaCI6IlJGWU50K2R2aVpHRURvTlNVQUo1QVY3TTZ2VUpFblhMZFBIRXVxSEFybnc9IiwiY2lkIjoiaGFoYXRlc3QiLCJwb2xpY3kiOiI1WTVOd2RpQStuU0ZINGhYODc3K0NqWWFrME82dXN5VlUyc0k5UFpjNkR3PSIsInRpbWVzdGFtcCI6IjIwMjYtMDctMDVUMDM6NTg6MThaIn0=";
+  // 🔥 핵심 추가 (이게 해결 포인트)
+  player.getNetworkingEngine().registerRequestFilter((type, request) => {
 
-  player.getNetworkingEngine().registerRequestFilter(function(type, request) {
+    // MPD / segment 요청 모두 base 맞추기
+    if (request.uris && request.uris.length > 0) {
 
-    // LICENSE 요청일 때만 토큰 추가
-    if (type === shaka.net.NetworkingEngine.RequestType.LICENSE) {
-      request.headers['pallycon-customdata-v2'] = token;
+      request.uris = request.uris.map(uri => {
+
+        // 이미 절대경로면 그대로
+        if (uri.startsWith('http')) return uri;
+
+        // ❗ 핵심: /baegopda/ 기준으로 강제
+        return './baegopda/' + uri.replace('./', '');
+      });
     }
   });
 
-  try {
-    await player.load('stream.mpd');
-    console.log('Playback started');
-  } catch (e) {
-    console.error('Load failed:', e);
-  }
+  await player.load('./baegopda/stream.mpd');
 }
 
 init();
 </script>
-
-</body>
-</html>
