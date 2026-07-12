@@ -1,66 +1,116 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="utf-8">
-    <title>DoveRunner DRM Test</title>
+<meta charset="UTF-8">
+<title>DoveRunner DRM Player</title>
 
-    <script src="https://cdn.jsdelivr.net/npm/shaka-player/dist/shaka-player.compiled.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/shaka-player/4.10.5/shaka-player.compiled.js"></script>
+
+<style>
+body {
+    background:#111;
+    color:white;
+    text-align:center;
+}
+
+video {
+    width:80%;
+    max-width:900px;
+}
+</style>
+
 </head>
+
 <body>
 
+<h2>DRM Player</h2>
+
 <video id="video"
-       width="900"
        controls
-       autoplay></video>
+       autoplay>
+</video>
+
 
 <script>
-async function init() {
 
-    shaka.polyfill.installAll();
+async function initPlayer() {
 
-    const video = document.getElementById("video");
+    const video = document.getElementById('video');
+
     const player = new shaka.Player(video);
 
-    player.addEventListener("error", e => {
-        console.error("Shaka Error:", e);
-    });
 
+    // ==============================
+    // DoveRunner License URL
+    // ==============================
     player.configure({
+
         drm: {
+
             servers: {
-                "com.widevine.alpha":
-                    "https://license.doverunner.com/ri/licenseManager.do"
+
+                'com.widevine.alpha':
+                'https://license-global.pallycon.com/ri/licenseManager.do'
+
             }
-        }
-    });
-
-    // ★ DoveRunner Token 추가
-    const token = "eyJrZXlfcm90YXRpb24iOmZhbHNlLCJyZXNwb25zZV9mb3JtYXQiOiJqc29uIiwidXNlcl9pZCI6ImhhaGF0ZXN0IiwiZHJtX3R5cGUiOiJXaWRldmluZSIsInNpdGVfaWQiOiJQTVdQIiwiaGFzaCI6IjZOd0hSVGt3UWtHUDBTaUlFTkVCM1YrN3RVV2treVJyUktwZHg5NzNUSkE9IiwiY2lkIjoidGVzdDEiLCJwb2xpY3kiOiJaaDd5alMxdUhpbkdQVHZDSVk3RWhkWnFodkp4NHg3b29xYU15RGwrTS9tbnVXVGUxNnRQckNSOUJXQ2FlcFRKSXZRSmwrR1JXdkwzT2NWU09MbHhWc1hHcGRqeHZsZXVkRXZEMHRFYWVDSnlOMWpjbENqbGkreStJWElOUGhiQyIsInRpbWVzdGFtcCI6IjIwMjYtMDctMDVUMTM6NDk6NTJaIn0=";
-
-    player.getNetworkingEngine().registerRequestFilter((type, request) => {
-
-        if (type === shaka.net.NetworkingEngine.RequestType.LICENSE) {
-
-            request.headers["pallycon-customdata-v2"] = token;
 
         }
 
     });
+
+
+    // ==============================
+    // JWT CustomData 넣는 부분
+    // ==============================
+
+    player.getNetworkingEngine()
+    .registerRequestFilter(function(type, request) {
+
+        if(type === shaka.net.NetworkingEngine.RequestType.LICENSE) {
+
+            request.headers['pallycon-customdata-v2'] =           'eyJrZXlfcm90YXRpb24iOmZhbHNlLCJyZXNwb25zZV9mb3JtYXQiOiJqc29uIiwidXNlcl9pZCI6ImhhaGF0ZXN0IiwiZHJtX3R5cGUiOiJXaWRldmluZSIsInNpdGVfaWQiOiJQTVdQIiwiaGFzaCI6IjZOd0hSVGt3UWtHUDBTaUlFTkVCM1YrN3RVV2treVJyUktwZHg5NzNUSkE9IiwiY2lkIjoidGVzdDEiLCJwb2xpY3kiOiJaaDd5alMxdUhpbkdQVHZDSVk3RWhkWnFodkp4NHg3b29xYU15RGwrTS9tbnVXVGUxNnRQckNSOUJXQ2FlcFRKSXZRSmwrR1JXdkwzT2NWU09MbHhWc1hHcGRqeHZsZXVkRXZEMHRFYWVDSnlOMWpjbENqbGkreStJWElOUGhiQyIsInRpbWVzdGFtcCI6IjIwMjYtMDctMDVUMTM6NDk6NTJaIn0=';
+
+        }
+
+    });
+
 
     try {
 
-        await player.load("./stream.mpd");
+        await player.load(
+        'https://electronicddoksang-commits.github.io/baegopda/stream.mpd'
+        );
 
-        console.log("Loaded");
-
-    } catch (e) {
-
-        console.error(e);
+        console.log("재생 준비 완료");
 
     }
+
+    catch(e) {
+
+        console.error("DRM 오류:", e);
+
+    }
+
 }
 
-init();
+
+document.addEventListener(
+"DOMContentLoaded",
+function(){
+
+    shaka.polyfill.installAll();
+
+    if(shaka.Player.isBrowserSupported()) {
+        initPlayer();
+    }
+
+    else {
+        console.error("지원하지 않는 브라우저");
+    }
+
+});
+
+
 </script>
 
 </body>
