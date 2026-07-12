@@ -45,16 +45,18 @@ async function initPlayer() {
     // ==============================
     player.configure({
 
-        drm: {
-
-            servers: {
-
-                'com.widevine.alpha':
-                'https://license-global.pallycon.com/ri/licenseManager.do'
-
-            }
-
+ drm: {
+    servers: {
+        'com.widevine.alpha':
+        'https://license-global.pallycon.com/ri/licenseManager.do'
+    },
+    advanced: {
+        'com.widevine.alpha': {
+            videoRobustness: 'SW_SECURE_DECODE',
+            audioRobustness: 'SW_SECURE_CRYPTO'
         }
+    }
+}
 
     });
 
